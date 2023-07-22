@@ -1,6 +1,7 @@
 package com.example.submissionakhirfundamentalandroid.presentation.activities.content.home
 
 import android.os.Bundle
+import android.util.Log
 import android.view.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
@@ -143,6 +144,7 @@ class HomeFragment : BaseFragment() {
                     isVisibleView(View.VISIBLE, binding.rvListUser)
                 }
                 is Resource.Error -> {
+                    Log.d("ERROR", "showData: ${resource.message.toString()}")
                     showSnackBarWithAction(
                         R.color.color_error,
                         resource.message.toString(),

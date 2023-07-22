@@ -23,7 +23,7 @@ class FavoriteRepositoryImpl(private val realm: Realm): FavoriteRepository {
                         val fav = db.createObject(FavoriteRealm::class.java)
                         fav.username = account.username
                         fav.img = account.img
-                         fav.status = true
+                        fav.status = true
                         emitter.onNext(Resource.Success("${account.username} berhasil disimpan"))
 
                         val d = db.where(FavoriteRealm::class.java).findAll()

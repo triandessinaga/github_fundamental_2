@@ -36,7 +36,7 @@ class RequestClient {
                 val reqBuilder = request.newBuilder()
                 reqBuilder.header("Accept", Header.HEADER_APP_JSON)
                 reqBuilder.header("Content-Type", Header.HEADER_APP_JSON)
-                reqBuilder.header("Authorization", "Bearer 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")
+                reqBuilder.header("Authorization", "Bearer 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")
 
                 val response = chain.proceed(reqBuilder.build())
                 return@addInterceptor response.newBuilder().build()
