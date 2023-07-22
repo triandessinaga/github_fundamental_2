@@ -17,8 +17,9 @@ import com.example.submissionakhirfundamentalandroid.databinding.FragmentFollowB
 import com.example.submissionakhirfundamentalandroid.databinding.ItemUserBinding
 import com.example.submissionakhirfundamentalandroid.domain.usecase.FollowerUseCase
 import com.example.submissionakhirfundamentalandroid.domain.usecase.FollowingUseCase
-
 import com.example.submissionakhirfundamentalandroid.presentation.activities.adapter.UserAdapter
+
+
 import com.example.submissionakhirfundamentalandroid.presentation.activities.content.home.HomeFragment
 import com.example.submissionakhirfundamentalandroid.presentation.base.BaseFragment
 import com.example.submissionakhirfundamentalandroid.utilities.network.RequestClient
@@ -29,13 +30,13 @@ class FollowFragment : BaseFragment() {
     companion object {
         const val ARG_POSITION = "position"
         const val USERNAME_KEY = "username_key"
+        const val FOLLOW_SLUG = "follow"
     }
 
-    private var bindingAdapter: ItemUserBinding? = null
     private var _binding: FragmentFollowBinding? = null
     private val binding get() = _binding!!
 
-    private lateinit var userAdapter: UserAdapter
+    private lateinit var userAdapter: UserAdapter<UserResponse>
     private val lists = ArrayList<UserResponse>()
     private val requestClient: RequestClient = RequestClient()
     private val detailRepository = DetailRepositoryImpl(requestClient)
@@ -52,19 +53,12 @@ class FollowFragment : BaseFragment() {
         savedInstanceState: Bundle?
     ): View? {
         _binding = FragmentFollowBinding.inflate(inflater, container, false)
-//        bindingAdapter = ItemUserBinding.bind(binding.root)
         return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-//        val checkFavorite = view.findViewById<CheckBox>(R.id.checkedFavorite)
-//        checkFavorite.visibility = View.GONE
-//        bindingAdapter!!.checkedFavorite.visibility = View.GONE
-        val itemLayout = binding.rvContentFollow.layoutManager?.findViewByPosition(0)
-        val itemTextView = itemLayout?.findViewById<CheckBox>(R.id.checkedFavorite)
-        itemTextView?.visibility =View.GONE
         setupRecyclerView()
 
         arguments?.let {
@@ -86,15 +80,10 @@ class FollowFragment : BaseFragment() {
 
     private fun setupRecyclerView() {
         binding.rvContentFollow.layoutManager = LinearLayoutManager(activity)
-        userAdapter = UserAdapter(lists)
+        userAdapter = UserAdapter(FOLLOW_SLUG, lists)
         binding.rvContentFollow.adapter = userAdapter
         binding.rvContentFollow.itemAnimator = DefaultItemAnimator()
         userAdapter.notifyDataSetChanged()
-        userAdapter.setOnItemClickCallback(object : UserAdapter.OnItemClickCallBack{
-            override fun onItemClicked(data: UserResponse) {}
-            override fun onItemShared(data: UserResponse) {
-            }
-        })
     }
 
     private fun showFollowing(){

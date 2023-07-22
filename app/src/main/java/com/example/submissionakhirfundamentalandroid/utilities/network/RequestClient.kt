@@ -4,7 +4,7 @@ package com.example.submissionakhirfundamentalandroid.utilities.network
 
 import com.example.submissionakhirfundamentalandroid.BuildConfig
 import com.example.submissionakhirfundamentalandroid.utilities.libraries.Header
-import com.papero.gituser.data.remote.service.GithubService
+import com.example.submissionakhirfundamentalandroid.data.remote.service.GithubService
 import okhttp3.CipherSuite
 import okhttp3.ConnectionSpec
 import okhttp3.OkHttpClient
@@ -36,7 +36,7 @@ class RequestClient {
                 val reqBuilder = request.newBuilder()
                 reqBuilder.header("Accept", Header.HEADER_APP_JSON)
                 reqBuilder.header("Content-Type", Header.HEADER_APP_JSON)
-                reqBuilder.header("Authorization", "Bearer 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")
+                reqBuilder.header("Authorization", "Bearer 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")
 
                 val response = chain.proceed(reqBuilder.build())
                 return@addInterceptor response.newBuilder().build()

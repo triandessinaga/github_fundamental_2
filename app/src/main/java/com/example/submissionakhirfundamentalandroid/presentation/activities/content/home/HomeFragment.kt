@@ -3,6 +3,7 @@ package com.example.submissionakhirfundamentalandroid.presentation.activities.co
 import android.os.Bundle
 import android.view.*
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.appcompat.widget.SearchView
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.ViewModel
@@ -16,35 +17,38 @@ import com.example.submissionakhirfundamentalandroid.data.repository.HomeReposit
 import com.example.submissionakhirfundamentalandroid.databinding.FragmentHomeBinding
 import com.example.submissionakhirfundamentalandroid.domain.usecase.AllUserUseCase
 import com.example.submissionakhirfundamentalandroid.domain.usecase.SearchUsernameUseCase
-import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.example.submissionakhirfundamentalandroid.presentation.activities.adapter.UserAdapter
+import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.example.submissionakhirfundamentalandroid.presentation.base.BaseFragment
+import com.example.submissionakhirfundamentalandroid.utilities.datastore.SettingPrefs
+import com.example.submissionakhirfundamentalandroid.utilities.datastore.dataStore
 import com.example.submissionakhirfundamentalandroid.utilities.network.RequestClient
 import com.example.submissionakhirfundamentalandroid.utilities.stateHandler.Resource
 
 
 class HomeFragment : BaseFragment() {
 
-    companion object {
-        fun newInstance() = HomeFragment()
-        const val USERNAME_KEY = "username_key"
-    }
-
-    private lateinit var userAdapter: UserAdapter
+    private var bottomNav: BottomNavigationView? = null
+    private lateinit var userAdapter: UserAdapter<UserResponse>
     private var searchView: SearchView? = null
+
+    private lateinit var pref: SettingPrefs
 
     private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding!!
 
-    private val lists = ArrayList<UserResponse>()
     private val requestClient: RequestClient = RequestClient()
-    private val homeRepository: HomeRepositoryImpl = HomeRepositoryImpl(requestClient)
+
+    private val homeRepository = HomeRepositoryImpl(requestClient)
+
     private val allDatUseCase: AllUserUseCase = AllUserUseCase(homeRepository)
     private val searchUsernameUseCase = SearchUsernameUseCase(homeRepository)
+
     private val viewModel: HomeViewModel by viewModels {
         HomeViewModelFactory(
-            allDatUseCase,
-            searchUsernameUseCase
+            allDatUseCase = allDatUseCase,
+            searchUsernameUseCase = searchUsernameUseCase,
+            sharedPref = pref
         )
     }
 
@@ -58,6 +62,8 @@ class HomeFragment : BaseFragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        pref = SettingPrefs.getInstance(requireActivity().application.dataStore)
+        bottomNav = activity?.findViewById(R.id.bottom_nav)
         (activity as AppCompatActivity).setSupportActionBar(binding.contentToolbar.toolbar)
         viewModel.getAllData()
         showData()
@@ -152,24 +158,24 @@ class HomeFragment : BaseFragment() {
             R.id.search -> {
                 searchByUsername()
             }
+
+            R.id.settings  -> {
+                view?.findNavController()?.navigate(R.id.action_homeFragment_to_settingsFragment)
+            }
         }
         return super.onOptionsItemSelected(item)
     }
 
     private fun setupRecyclerView(data: ArrayList<UserResponse>) {
         binding.rvListUser.layoutManager = LinearLayoutManager(activity)
-        userAdapter = UserAdapter(data)
+        userAdapter = UserAdapter(dataUser = data)
         binding.rvListUser.adapter = userAdapter
         binding.rvListUser.itemAnimator = DefaultItemAnimator()
         userAdapter.notifyDataSetChanged()
         userAdapter.setOnItemClickCallback(object :
             UserAdapter.OnItemClickCallBack {
-            override fun onItemClicked(data: UserResponse) {
-                selectedUser(data)
-            }
-
-            override fun onItemShared(data: UserResponse) {
-            }
+            override fun <T: Any> onItemFavorite(data: T) {}
+            override fun <T : Any> onItemClicked(data: T) = selectedUser(data as UserResponse)
         })
     }
 
@@ -181,26 +187,42 @@ class HomeFragment : BaseFragment() {
 
     override fun onStart() {
         super.onStart()
-        val bottomNavigationView = activity?.findViewById<BottomNavigationView>(R.id.bottomNav)
-        bottomNavigationView?.visibility = View.VISIBLE
+        bottomNav?.visibility = View.VISIBLE
         binding.placeholderRoot.isShimmerStarted
-        binding
+        getTheme()
+    }
+
+    private fun getTheme() {
+        viewModel.getTheme().observe(viewLifecycleOwner){isDarkModeActive: Boolean ->
+            if (isDarkModeActive){
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+            }
+            else{
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+            }
+        }
     }
 
     override fun onDestroy() {
         super.onDestroy()
         _binding = null
     }
+
+    companion object {
+        const val USERNAME_KEY = "username_key"
+    }
 }
 
 class HomeViewModelFactory(
     private val allDatUseCase: AllUserUseCase,
-    private val searchUsernameUseCase: SearchUsernameUseCase
+    private val searchUsernameUseCase: SearchUsernameUseCase,
+    private val sharedPref: SettingPrefs
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         return HomeViewModel(
-            allDatUseCase,
-            searchUsernameUseCase
+            allUserUseCase = allDatUseCase,
+            searchUsernameUseCase = searchUsernameUseCase,
+            sharedPref = sharedPref
         ) as T
     }
 }

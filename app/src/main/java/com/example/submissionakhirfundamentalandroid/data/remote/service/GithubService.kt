@@ -1,4 +1,4 @@
-package com.papero.gituser.data.remote.service
+package com.example.submissionakhirfundamentalandroid.data.remote.service
 
 import com.example.submissionakhirfundamentalandroid.data.remote.SearchResponse
 import com.example.submissionakhirfundamentalandroid.data.remote.UserDetail

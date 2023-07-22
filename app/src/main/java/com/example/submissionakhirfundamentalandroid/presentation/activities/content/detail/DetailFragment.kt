@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -11,18 +12,23 @@ import com.bumptech.glide.Glide
 import com.example.submissionakhirfundamentalandroid.R
 import com.example.submissionakhirfundamentalandroid.data.repository.DetailRepositoryImpl
 import com.example.submissionakhirfundamentalandroid.databinding.FragmentDetailBinding
+import com.example.submissionakhirfundamentalandroid.domain.usecase.DeleteFavoriteUseCase
 import com.example.submissionakhirfundamentalandroid.domain.usecase.DetailUserUseCase
-import com.google.android.material.bottomnavigation.BottomNavigationView
-import com.google.android.material.tabs.TabLayoutMediator
-import com.papero.gituser.presentation.activities.adapter.ContentDetailUserAdapter
+import com.example.submissionakhirfundamentalandroid.domain.usecase.GetFavoriteLocalUseCase
+import com.example.submissionakhirfundamentalandroid.domain.usecase.SaveFavoriteUseCase
+import com.example.submissionakhirfundamentalandroid.presentation.activities.adapter.TabDetailAdapter
 import com.example.submissionakhirfundamentalandroid.presentation.activities.content.home.HomeFragment
 import com.example.submissionakhirfundamentalandroid.presentation.base.BaseFragment
 import com.example.submissionakhirfundamentalandroid.utilities.network.RequestClient
 import com.example.submissionakhirfundamentalandroid.utilities.stateHandler.Resource
+import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.google.android.material.tabs.TabLayoutMediator
 
-class DetailFragment : BaseFragment() {
 
-    private lateinit var detailAdapter: ContentDetailUserAdapter
+class DetailFragment : BaseFragment(), View.OnClickListener {
+
+    private var bottomNav: BottomNavigationView? = null
+    private lateinit var detailAdapter: TabDetailAdapter
 
     private var _binding: FragmentDetailBinding? = null
     private val binding get() = _binding!!
@@ -30,10 +36,16 @@ class DetailFragment : BaseFragment() {
     private val requestClient: RequestClient = RequestClient()
     private val detailRepository = DetailRepositoryImpl(requestClient)
     private val detailUserUseCase = DetailUserUseCase(detailRepository)
-    private val viewModel: DetailViewModel by viewModels { DetailViewModelFactory(detailUserUseCase) }
+    private val saveFavUseCase = SaveFavoriteUseCase(detailRepository)
+    private val getFavoriteLocalUseCase = GetFavoriteLocalUseCase(detailRepository)
+    private val deleteUserUseCase = DeleteFavoriteUseCase(detailRepository)
+
+    private val viewModel: DetailViewModel by viewModels { DetailViewModelFactory(detailUserUseCase, saveFavUseCase, getFavoriteLocalUseCase, deleteUserUseCase) }
 
     private var totalFollowers = 0
     private var totalFollowing = 0
+    private var username: String? = null
+    private var isSaved: Boolean = false
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -45,19 +57,39 @@ class DetailFragment : BaseFragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        bottomNav = activity?.findViewById(R.id.bottom_nav)
+        detailAdapter = TabDetailAdapter(parentFragmentManager, lifecycle)
 
-        detailAdapter = ContentDetailUserAdapter(parentFragmentManager, lifecycle)
-        val bottomNavigationView = activity?.findViewById<BottomNavigationView>(R.id.bottomNav)
-        bottomNavigationView?.visibility = View.GONE
-
+        initListeners()
         getSelectedUser()
+        detailResult()
+        isFavorite()
+    }
 
+    private fun isFavorite() {
+        viewModel.getFavoriteLocal(username.toString())
+        viewModel.isSaved.observe(viewLifecycleOwner){state ->
+            when(state){
+                is Resource.Error -> Toast.makeText(context, state.message, Toast.LENGTH_SHORT).show()
+                is Resource.Loading -> {}
+                is Resource.Success -> {
+                    if (state.data == true){
+                        isSaved = true
+                        binding.fabFavorite.setImageResource(R.drawable.ic_favorite_active)
+                    }else{
+                        isSaved = false
+                        binding.fabFavorite.setImageResource(R.drawable.ic_favorite_border)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun detailResult() {
         viewModel.detailResult.observe(viewLifecycleOwner){resource ->
             val data = resource.data
             when(resource){
-                is Resource.Loading -> {
-                    binding.placeholderTopContent.isShimmerStarted
-                }
+                is Resource.Loading -> { binding.placeholderTopContent.isShimmerStarted }
                 is Resource.Success -> {
 
                     if (data?.avatarUrl != null){
@@ -65,6 +97,7 @@ class DetailFragment : BaseFragment() {
                             .load(resource.data.avatarUrl)
                             .centerCrop()
                             .into(binding.profileImage)
+
                         binding.txtJob.isSelected = true
                         binding.txtLocation.isSelected = true
                         binding.txtName.text = (if (data.name == null) getString(R.string.label_content_is_empty, "Name") else  data.name).toString()
@@ -84,8 +117,10 @@ class DetailFragment : BaseFragment() {
                 is Resource.Error -> {}
             }
         }
+    }
 
-
+    private fun initListeners() {
+        binding.fabFavorite.setOnClickListener(this)
     }
 
     private fun setupTabLayout(){
@@ -105,25 +140,66 @@ class DetailFragment : BaseFragment() {
     }
 
     private fun getSelectedUser(){
-        val username = arguments?.getString(HomeFragment.USERNAME_KEY)
+        username = arguments?.getString(HomeFragment.USERNAME_KEY)
         if (username != null) {
-            viewModel.getDetailUser(username)
-            detailAdapter.username = username
+            viewModel.getDetailUser(username!!)
+            detailAdapter.username = username.toString()
+        }
+    }
+
+    private fun saveFavorite(username: String) {
+        viewModel.saveFavorite(username)
+        viewModel.saveFavorite.observe(viewLifecycleOwner){resource ->
+            when(resource){
+                is Resource.Error -> Toast.makeText(context, resource.message, Toast.LENGTH_SHORT).show()
+                is Resource.Loading -> {}
+                is Resource.Success -> Toast.makeText(context, resource.data.toString(), Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun deleteFavorite(username: String) {
+        viewModel.deleteFavorite(username)
+        viewModel.isDeleted.observe(viewLifecycleOwner){resource ->
+            when(resource){
+                is Resource.Error -> Toast.makeText(context, resource.message, Toast.LENGTH_SHORT).show()
+                is Resource.Loading -> {}
+                is Resource.Success -> Toast.makeText(context, resource.data.toString(), Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    override fun onClick(p0: View?) {
+        when(p0?.id){
+            binding.fabFavorite.id -> {
+                val iconFab = if (isSaved){
+                    deleteFavorite(username.toString())
+                    R.drawable.ic_favorite_border
+                }else{
+                    saveFavorite(username.toString())
+                    R.drawable.ic_favorite_active
+                }
+                binding.fabFavorite.setImageResource(iconFab)
+                isSaved = !isSaved
+            }
         }
     }
 
     override fun onStart() {
         super.onStart()
+        bottomNav?.visibility = View.GONE
         binding.placeholderTopContent.isShimmerStarted
     }
 }
 
 class DetailViewModelFactory(
-    private val detailUserUseCase: DetailUserUseCase
+    private val detailUserUseCase: DetailUserUseCase, private val saveFavoriteUseCase: SaveFavoriteUseCase,
+    private val getFavoriteLocalUseCase: GetFavoriteLocalUseCase, private val deleteFavoriteUseCase: DeleteFavoriteUseCase
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         return DetailViewModel(
-            detailUserUseCase
+            detailUserUseCase = detailUserUseCase, saveFavoriteUseCase = saveFavoriteUseCase,
+            getFavoriteLocalUseCase = getFavoriteLocalUseCase, deleteFavoriteUseCase = deleteFavoriteUseCase
         ) as T
     }
 }

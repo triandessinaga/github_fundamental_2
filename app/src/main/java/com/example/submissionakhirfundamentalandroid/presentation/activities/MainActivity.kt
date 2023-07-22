@@ -8,22 +8,28 @@ import com.example.submissionakhirfundamentalandroid.R
 import com.example.submissionakhirfundamentalandroid.databinding.ActivityMainBinding
 
 import com.example.submissionakhirfundamentalandroid.presentation.base.BaseActivity
+import com.google.android.material.switchmaterial.SwitchMaterial
 
-class MainActivity : BaseActivity() {
+class MainActivity : BaseActivity () {
 
     private var _binding: ActivityMainBinding? = null
-    private val binding get() = _binding!!
+    private val binding get() = _binding
 
-    private lateinit var navController: NavController
     private lateinit var navHostFragment: NavHostFragment
+    private lateinit var navController: NavController
+    private var switchTheme: SwitchMaterial? = null
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         _binding = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(binding.root)
+        setContentView(binding?.root)
+        setupBottomView()
+    }
 
+    private fun setupBottomView(){
         navHostFragment= supportFragmentManager.findFragmentById(R.id.mainHostFragment) as NavHostFragment
         navController = navHostFragment.navController
-        binding.bottomNav.setupWithNavController(navController)
+        binding?.bottomNav?.setupWithNavController(navController)
     }
 }
