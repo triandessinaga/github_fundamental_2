@@ -1,5 +1,6 @@
 package com.example.submissionakhirfundamentalandroid.presentation.activities.adapter
 
+
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup

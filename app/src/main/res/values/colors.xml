@@ -2,7 +2,7 @@
 <resources>
     <color name="color_primary">#FF7E47</color>
     <color name="color_primary_dark">#BC5124</color>
-    <color name="color_primary_variant">#FFB380</color>
+    <color name="color_primary_variant">#FF3700B3</color>
     <color name="color_secondary">#03BBFF</color>
     <color name="color_secondary_light">#75DAFF</color>
 
@@ -10,7 +10,9 @@
     <color name="teal_200">#FF03DAC5</color>
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
+    <color name="black_light">#42000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="color_tab_layout">#FFFFFF</color>
 
     <color name="color_error">#F82626</color>
     <color name="color_container_coin">#F5F2F2</color>
@@ -31,5 +33,6 @@
     <color name="color_placeholder_dark">#C4C4C4</color>
     <color name="color_placeholder_light">#DDDDDD</color>
     <color name="color_border_bg_active">#005580</color>
+    <color name="color_icon">#03BAFE</color>
 
 </resources>
